@@ -5,179 +5,331 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>S7-1200 Timer & Counter Simulator</title>
 <style>
-*{box-sizing:border-box;font-family:system-ui,sans-serif;}
-body{background:#f0f4f9;padding:16px;max-width:420px;margin:0 auto;}
-.card{background:#fff;border-radius:24px;padding:20px;margin-bottom:20px;box-shadow:0 4px 12px #00000018;}
-.select-bar{display:flex;align-items:center;justify-content:space-between;background:#c6e0f8;border-radius:20px;padding:12px 20px;font-size:28px;font-weight:bold;color:#104888;margin-bottom:20px;}
-.dropdown{font-size:28px;border:none;background:transparent;color:#104888;font-weight:bold;cursor:pointer;}
-.label{background:#ffb347;color:#222;display:inline-block;padding:6px 14px;border-radius:12px;font-weight:bold;margin:8px 0;}
-.input-row{margin:10px 0;}
-input[type="number"]{width:100%;padding:14px;border:3px solid #2b78c9;border-radius:24px;font-size:24px;}
-.switch-box{display:flex;gap:12px;align-items:center;margin:10px 0;}
-.toggle{width:60px;height:32px;border-radius:999px;background:#ccc;position:relative;cursor:pointer;transition:0.25s;}
-.toggle.on{background:#2b78c9;}
-.toggle::after{content:"";width:26px;height:26px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:0.25s;}
-.toggle.on::after{left:31px;}
-.disp-box{background:#152847;border-radius:24px;padding:18px;margin:16px 0;display:flex;align-items:center;gap:14px;border:4px solid #ffc838;}
-.disp-val{background:#ffc838;color:#111;font-size:48px;font-weight:bold;padding:10px 20px;border-radius:16px;}
-.q-box{width:100%;padding:14px;border:3px solid #2b78c9;border-radius:24px;text-align:center;font-size:24px;font-weight:bold;color:#104888;}
-.btn-row{display:flex;gap:10px;margin:10px 0;}
-.btn{flex:1;padding:14px;border:none;border-radius:20px;font-size:20px;font-weight:bold;color:#fff;cursor:pointer;}
-.btn-cu{background:#2b78c9;}
-.btn-r{background:#e8edf4;color:#222;}
+*{box-sizing:border-box;font-family:system-ui,sans-serif}
+body{background:#f4f7fa;padding:16px;margin:0}
+.container{max-width:420px;margin:0 auto;gap:16px;display:flex;flex-direction:column}
+.block-card{background:#fff;border-radius:22px;padding:18px;border:2px solid #2b6cb0;box-shadow:0 4px 12px #00000018}
+.block-title{background:#bfdbfe;color:#1e40af;font-weight:bold;padding:10px 16px;border-radius:16px;font-size:22px;display:inline-block;margin-bottom:16px}
+.row{margin:12px 0}
+label{display:block;margin:6px 0;font-weight:bold;color:#d97706;font-size:18px}
+input[type="number"]{width:100%;padding:12px;border-radius:14px;border:2px solid #2b6cb0;font-size:22px}
+.switch{width:60px;height:32px;border-radius:999px;background:#ccc;position:relative;cursor:pointer;margin:8px 0}
+.switch.on{background:#22c55e}
+.switch::after{content:"";width:26px;height:26px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s}
+.switch.on::after{left:32px}
+.et-box{background:#1e293b;color:#fff;border-radius:22px;padding:16px;display:flex;align-items:center;justify-content:center;gap:12px;margin:14px 0}
+.et-val{font-size:48px;font-weight:bold;background:#fef08a;color:#111;padding:8px 20px;border-radius:16px}
+.q-box{width:100%;padding:14px;border-radius:16px;background:#dbeafe;text-align:center;font-size:20px;font-weight:bold;color:#1e40af}
+.btn-group{display:flex;gap:10px;margin:10px 0}
+button{flex:1;padding:12px;border-radius:14px;border:none;font-size:17px;font-weight:bold;cursor:pointer}
+.btn-blue{background:#2563eb;color:#fff}
+.btn-gray{background:#e2e8f0;color:#222}
 </style>
 </head>
 <body>
-<div class="card">
-  <div class="select-bar">
-    <select id="blockSel" class="dropdown">
-      <option value="TON">TON</option>
-      <option value="TOF">TOF</option>
-      <option value="CTU">CTU</option>
-    </select>
-    <div class="toggle" id="mainToggle"></div>
-  </div>
+<div class="container">
+<!-- 1. TON 接通延时 -->
+<div class="block-card">
+<div class="block-title">TON ⏳</div>
+<div class="row">
+<label>IN</label>
+<div class="switch" id="ton_in"></div>
+</div>
+<div class="row">
+<label>PT (S)</label>
+<input type="number" id="ton_pt" value="5">
+</div>
+<div class="et-box">
+<span>ET</span>
+<div class="et-val" id="ton_et">0.0</div>
+<span>s</span>
+</div>
+<div class="q-box" id="ton_q">Q = false</div>
+</div>
 
-  <div id="areaTONTOF">
-    <div class="label">IN</div>
-    <div class="switch-box">
-      <div class="toggle" id="inToggle"></div>
-    </div>
-    <div class="label">PT (S)</div>
-    <input id="ptInput" type="number" value="5" min="0.1" step="0.1">
-    <div class="disp-box">
-      <div style="color:#fff;font-size:24px">ET</div>
-      <div class="disp-val" id="etVal">0.0</div>
-      <span style="color:#fff">s</span>
-    </div>
-    <div class="q-box" id="qBox">Q = false</div>
-  </div>
+<!-- 2. TOF 关断延时 -->
+<div class="block-card">
+<div class="block-title">TOF</div>
+<div class="row">
+<label>IN</label>
+<div class="switch" id="tof_in"></div>
+</div>
+<div class="row">
+<label>PT (S)</label>
+<input type="number" id="tof_pt" value="5">
+</div>
+<div class="et-box">
+<span>ET</span>
+<div class="et-val" id="tof_et">0.0</div>
+<span>s</span>
+</div>
+<div class="q-box" id="tof_q">Q = false</div>
+</div>
 
-  <div id="areaCTU" style="display:none;">
-    <div class="label">PV</div>
-    <input id="pvInput" type="number" value="5" min="0" step="1">
-    <div class="btn-row">
-      <button class="btn btn-cu" id="cuBtn">+ CU</button>
-      <button class="btn btn-r" id="rBtn">🗑 R</button>
-    </div>
-    <div class="disp-box">
-      <div style="color:#fff;font-size:24px">CV</div>
-      <div class="disp-val" id="cvVal">0</div>
-    </div>
-    <div class="q-box" id="quBox">QU = false</div>
-  </div>
+<!-- 3. TP 脉冲定时器 -->
+<div class="block-card">
+<div class="block-title">TP ⚡</div>
+<div class="row">
+<label>IN</label>
+<div class="switch" id="tp_in"></div>
+</div>
+<div class="row">
+<label>PT (S)</label>
+<input type="number" id="tp_pt" value="3">
+</div>
+<div class="et-box">
+<span>ET</span>
+<div class="et-val" id="tp_et">0.0</div>
+<span>s</span>
+</div>
+<div class="q-box" id="tp_q">Q = false</div>
+</div>
+
+<!-- 4. TONR 保持接通延时 -->
+<div class="block-card">
+<div class="block-title">TONR 🧮</div>
+<div class="row">
+<label>IN</label>
+<div class="switch" id="tonr_in"></div>
+</div>
+<div class="row">
+<label>PT (S)</label>
+<input type="number" id="tonr_pt" value="5">
+</div>
+<div class="btn-group">
+<button class="btn-gray" id="tonr_r">R 复位</button>
+</div>
+<div class="et-box">
+<span>ET</span>
+<div class="et-val" id="tonr_et">0.0</div>
+<span>s</span>
+</div>
+<div class="q-box" id="tonr_q">Q = false</div>
+</div>
+
+<!-- 5. CTU 加计数器 -->
+<div class="block-card">
+<div class="block-title">CTU △</div>
+<div class="row">
+<label>PV</label>
+<input type="number" id="ctu_pv" value="5">
+</div>
+<div class="btn-group">
+<button class="btn-blue" id="ctu_cu">+ CU</button>
+<button class="btn-gray" id="ctu_r">R 复位</button>
+</div>
+<div class="et-box">
+<span>CV</span>
+<div class="et-val" id="ctu_cv">0</div>
+</div>
+<div class="q-box" id="ctu_qu">QU = false</div>
+</div>
+
+<!-- 6. CTD 减计数器 -->
+<div class="block-card">
+<div class="block-title">CTD ▽</div>
+<div class="row">
+<label>PV</label>
+<input type="number" id="ctd_pv" value="5">
+</div>
+<div class="btn-group">
+<button class="btn-blue" id="ctd_cd">- CD</button>
+<button class="btn-gray" id="ctd_ld">LD</button>
+<button class="btn-gray" id="ctd_r">R 复位</button>
+</div>
+<div class="et-box">
+<span>CV</span>
+<div class="et-val" id="ctd_cv">0</div>
+</div>
+<div class="q-box" id="ctd_qd">QD = false</div>
+</div>
+
+<!-- 7. CTUD 加减计数器 -->
+<div class="block-card">
+<div class="block-title">CTUD ⟳</div>
+<div class="row">
+<label>PV</label>
+<input type="number" id="ctud_pv" value="5">
+</div>
+<div class="btn-group">
+<button class="btn-blue" id="ctud_cu">+ CU</button>
+<button class="btn-blue" id="ctud_cd">- CD</button>
+</div>
+<div class="btn-group">
+<button class="btn-gray" id="ctud_ld">LD</button>
+<button class="btn-gray" id="ctud_r">R 复位</button>
+</div>
+<div class="et-box">
+<span>CV</span>
+<div class="et-val" id="ctud_cv">0</div>
+</div>
+<div class="q-box" style="display:flex;gap:12px;justify-content:center" >
+<span id="ctud_qu">QU = false</span>
+<span id="ctud_qd">QD = true</span>
+</div>
+</div>
 </div>
 
 <script>
-// 元素
-const blockSel = document.getElementById('blockSel');
-const areaTONTOF = document.getElementById('areaTONTOF');
-const areaCTU = document.getElementById('areaCTU');
-const inToggle = document.getElementById('inToggle');
-const ptInput = document.getElementById('ptInput');
-const etVal = document.getElementById('etVal');
-const qBox = document.getElementById('qBox');
-const pvInput = document.getElementById('pvInput');
-const cuBtn = document.getElementById('cuBtn');
-const rBtn = document.getElementById('rBtn');
-const cvVal = document.getElementById('cvVal');
-const quBox = document.getElementById('quBox');
-
-// 状态
-let mode = "TON";
-let IN = false;
-let PT = 5.0;
-let ET = 0.0;
-let Q = false;
-let PV = 5;
-let CV = 0;
-let QU = false;
-let timerId = null;
-let lastIn = false;
-
-// 切换块 TON/TOF/CTU
-blockSel.onchange = ()=>{
-  mode = blockSel.value;
-  resetAll();
-  if(mode === 'CTU'){
-    areaTONTOF.style.display = 'none';
-    areaCTU.style.display = 'block';
-  }else{
-    areaTONTOF.style.display = 'block';
-    areaCTU.style.display = 'none';
-  }
+// 状态存储
+const state = {
+    ton:{in:false,pt:5,et:0,q:false},
+    tof:{in:false,pt:5,et:0,q:false},
+    tp:{in:false,pt:3,et:0,q:false,triggered:false},
+    tonr:{in:false,pt:5,et:0,q:false},
+    ctu:{pv:5,cv:0,qu:false},
+    ctd:{pv:5,cv:0,qd:true},
+    ctud:{pv:5,cv:0,qu:false,qd:true}
 }
-
-// 复位全部
-function resetAll(){
-  stopTimer();
-  IN = false;
-  ET = 0.0;
-  Q = false;
-  CV = 0;
-  QU = false;
-  render();
-}
-
-// 渲染界面
-function render(){
-  inToggle.classList.toggle('on', IN);
-  etVal.textContent = ET.toFixed(1);
-  qBox.textContent = `Q = ${Q}`;
-  cvVal.textContent = CV;
-  quBox.textContent = `QU = ${QU}`;
-}
-
-// 定时器循环 100ms扫描
-function startTimer(){
-  stopTimer();
-  timerId = setInterval(scan,100);
-}
-function stopTimer(){
-  clearInterval(timerId);
-}
-
-function scan(){
-  PT = Number(ptInput.value)||0.1;
-  if(mode === 'TON'){
-    if(IN){
-      ET += 0.1;
-      if(ET >= PT) Q = true;
-      else Q = false;
-    }else{
-      ET = 0; Q = false;
+// 开关绑定
+function bindSwitch(id,key){
+    const el=document.getElementById(id);
+    el.onclick=()=>{
+        state[key].in=!state[key].in;
+        el.classList.toggle("on",state[key].in);
     }
-  }else if(mode === 'TOF'){
-    if(IN){
-      Q = true; ET = 0;
+}
+bindSwitch("ton_in","ton");
+bindSwitch("tof_in","tof");
+bindSwitch("tp_in","tp");
+bindSwitch("tonr_in","tonr");
+
+// 定时器逻辑，100ms刷新
+setInterval(()=>{
+    // TON
+    state.ton.pt = Number(document.getElementById("ton_pt").value)||1;
+    if(state.ton.in){
+        state.ton.et +=0.1;
+        if(state.ton.et >= state.ton.pt){
+            state.ton.et = state.ton.pt;
+            state.ton.q = true;
+        }
     }else{
-      ET +=0.1;
-      if(ET >= PT) Q = false;
+        state.ton.et=0;state.ton.q=false;
     }
-  }
-  render();
+    document.getElementById("ton_et").innerText=state.ton.et.toFixed(1);
+    document.getElementById("ton_q").innerText=`Q = ${state.ton.q}`;
+
+    // TOF
+    state.tof.pt = Number(document.getElementById("tof_pt").value)||1;
+    if(state.tof.in){
+        state.tof.et=0;state.tof.q=true;
+    }else{
+        if(state.tof.q){
+            state.tof.et +=0.1;
+            if(state.tof.et >= state.tof.pt){
+                state.tof.et=state.tof.pt;
+                state.tof.q=false;
+            }
+        }
+    }
+    document.getElementById("tof_et").innerText=state.tof.et.toFixed(1);
+    document.getElementById("tof_q").innerText=`Q = ${state.tof.q}`;
+
+    // TP
+    state.tp.pt = Number(document.getElementById("tp_pt").value)||1;
+    if(state.tp.in && !state.tp.triggered){
+        state.tp.triggered=true;
+        state.tp.et=0;state.tp.q=true;
+    }
+    if(state.tp.q){
+        state.tp.et +=0.1;
+        if(state.tp.et >= state.tp.pt){
+            state.tp.q=false;
+        }
+    }
+    if(!state.tp.in && !state.tp.q){
+        state.tp.triggered=false;
+    }
+    document.getElementById("tp_et").innerText=state.tp.et.toFixed(1);
+    document.getElementById("tp_q").innerText=`Q = ${state.tp.q}`;
+
+    // TONR
+    state.tonr.pt = Number(document.getElementById("tonr_pt").value)||1;
+    if(state.tonr.in){
+        state.tonr.et +=0.1;
+        if(state.tonr.et >= state.tonr.pt){
+            state.tonr.et = state.tonr.pt;
+            state.tonr.q = true;
+        }
+    }
+    document.getElementById("tonr_et").innerText=state.tonr.et.toFixed(1);
+    document.getElementById("tonr_q").innerText=`Q = ${state.tonr.q}`;
+},100);
+
+// TONR复位
+document.getElementById("tonr_r").onclick=()=>{
+    state.tonr.et=0;state.tonr.q=false;
 }
 
-// IN开关
-inToggle.onclick = ()=>{
-  IN = !IN;
-  render();
-  if(mode === 'TON' || mode === 'TOF') startTimer();
+// CTU
+document.getElementById("ctu_cu").onclick=()=>{
+    state.ctu.pv=Number(document.getElementById("ctu_pv").value)||1;
+    state.ctu.cv +=1;
+    if(state.ctu.cv >= state.ctu.pv) state.ctu.qu=true;
+    document.getElementById("ctu_cv").innerText=state.ctu.cv;
+    document.getElementById("ctu_qu").innerText=`QU = ${state.ctu.qu}`;
+}
+document.getElementById("ctu_r").onclick=()=>{
+    state.ctu.cv=0;state.ctu.qu=false;
+    document.getElementById("ctu_cv").innerText=state.ctu.cv;
+    document.getElementById("ctu_qu").innerText=`QU = ${state.ctu.qu}`;
 }
 
-// CTU CU上升沿
-cuBtn.onclick = ()=>{
-  PV = Number(pvInput.value)||1;
-  CV +=1;
-  if(CV >= PV) QU = true;
-  render();
+// CTD
+document.getElementById("ctd_cd").onclick=()=>{
+    state.ctd.pv=Number(document.getElementById("ctd_pv").value)||1;
+    state.ctd.cv -=1;
+    state.ctd.qd = (state.ctd.cv <= 0);
+    document.getElementById("ctd_cv").innerText=state.ctd.cv;
+    document.getElementById("ctd_qd").innerText=`QD = ${state.ctd.qd}`;
 }
-rBtn.onclick = ()=>{
-  CV = 0; QU = false;
-  render();
+document.getElementById("ctd_ld").onclick=()=>{
+    state.ctd.pv=Number(document.getElementById("ctd_pv").value)||1;
+    state.ctd.cv = state.ctd.pv;
+    state.ctd.qd=false;
+    document.getElementById("ctd_cv").innerText=state.ctd.cv;
+    document.getElementById("ctd_qd").innerText=`QD = ${state.ctd.qd}`;
+}
+document.getElementById("ctd_r").onclick=()=>{
+    state.ctd.cv=0;state.ctd.qd=true;
+    document.getElementById("ctd_cv").innerText=state.ctd.cv;
+    document.getElementById("ctd_qd").innerText=`QD = ${state.ctd.qd}`;
 }
 
-render();
+// CTUD
+function refreshCTUD(){
+    document.getElementById("ctud_cv").innerText=state.ctud.cv;
+    document.getElementById("ctud_qu").innerText=`QU = ${state.ctud.qu}`;
+    document.getElementById("ctud_qd").innerText=`QD = ${state.ctud.qd}`;
+}
+document.getElementById("ctud_cu").onclick=()=>{
+    state.ctud.pv=Number(document.getElementById("ctud_pv").value)||1;
+    state.ctud.cv +=1;
+    state.ctud.qu = state.ctud.cv >= state.ctud.pv;
+    state.ctud.qd = state.ctud.cv <= 0;
+    refreshCTUD();
+}
+document.getElementById("ctud_cd").onclick=()=>{
+    state.ctud.pv=Number(document.getElementById("ctud_pv").value)||1;
+    state.ctud.cv -=1;
+    state.ctud.qu = state.ctud.cv >= state.ctud.pv;
+    state.ctud.qd = state.ctud.cv <= 0;
+    refreshCTUD();
+}
+document.getElementById("ctud_ld").onclick=()=>{
+    state.ctud.pv=Number(document.getElementById("ctud_pv").value)||1;
+    state.ctud.cv = state.ctud.pv;
+    state.ctud.qu = state.ctud.cv >= state.ctud.pv;
+    state.ctud.qd = state.ctud.cv <= 0;
+    refreshCTUD();
+}
+document.getElementById("ctud_r").onclick=()=>{
+    state.ctud.cv=0;
+    state.ctud.qu=false;
+    state.ctud.qd=true;
+    refreshCTUD();
+}
 </script>
 </body>
 </html>
