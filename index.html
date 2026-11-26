@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S7-1200 Timer & Counter Simulator</title>
+<style>
+*{box-sizing:border-box;font-family:system-ui,sans-serif;}
+body{background:#f0f4f9;padding:16px;max-width:420px;margin:0 auto;}
+.card{background:#fff;border-radius:24px;padding:20px;margin-bottom:20px;box-shadow:0 4px 12px #00000018;}
+.select-bar{display:flex;align-items:center;justify-content:space-between;background:#c6e0f8;border-radius:20px;padding:12px 20px;font-size:28px;font-weight:bold;color:#104888;margin-bottom:20px;}
+.dropdown{font-size:28px;border:none;background:transparent;color:#104888;font-weight:bold;cursor:pointer;}
+.label{background:#ffb347;color:#222;display:inline-block;padding:6px 14px;border-radius:12px;font-weight:bold;margin:8px 0;}
+.input-row{margin:10px 0;}
+input[type="number"]{width:100%;padding:14px;border:3px solid #2b78c9;border-radius:24px;font-size:24px;}
+.switch-box{display:flex;gap:12px;align-items:center;margin:10px 0;}
+.toggle{width:60px;height:32px;border-radius:999px;background:#ccc;position:relative;cursor:pointer;transition:0.25s;}
+.toggle.on{background:#2b78c9;}
+.toggle::after{content:"";width:26px;height:26px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:0.25s;}
+.toggle.on::after{left:31px;}
+.disp-box{background:#152847;border-radius:24px;padding:18px;margin:16px 0;display:flex;align-items:center;gap:14px;border:4px solid #ffc838;}
+.disp-val{background:#ffc838;color:#111;font-size:48px;font-weight:bold;padding:10px 20px;border-radius:16px;}
+.q-box{width:100%;padding:14px;border:3px solid #2b78c9;border-radius:24px;text-align:center;font-size:24px;font-weight:bold;color:#104888;}
+.btn-row{display:flex;gap:10px;margin:10px 0;}
+.btn{flex:1;padding:14px;border:none;border-radius:20px;font-size:20px;font-weight:bold;color:#fff;cursor:pointer;}
+.btn-cu{background:#2b78c9;}
+.btn-r{background:#e8edf4;color:#222;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="select-bar">
+    <select id="blockSel" class="dropdown">
+      <option value="TON">TON</option>
+      <option value="TOF">TOF</option>
+      <option value="CTU">CTU</option>
+    </select>
+    <div class="toggle" id="mainToggle"></div>
+  </div>
+
+  <div id="areaTONTOF">
+    <div class="label">IN</div>
+    <div class="switch-box">
+      <div class="toggle" id="inToggle"></div>
+    </div>
+    <div class="label">PT (S)</div>
+    <input id="ptInput" type="number" value="5" min="0.1" step="0.1">
+    <div class="disp-box">
+      <div style="color:#fff;font-size:24px">ET</div>
+      <div class="disp-val" id="etVal">0.0</div>
+      <span style="color:#fff">s</span>
+    </div>
+    <div class="q-box" id="qBox">Q = false</div>
+  </div>
+
+  <div id="areaCTU" style="display:none;">
+    <div class="label">PV</div>
+    <input id="pvInput" type="number" value="5" min="0" step="1">
+    <div class="btn-row">
+      <button class="btn btn-cu" id="cuBtn">+ CU</button>
+      <button class="btn btn-r" id="rBtn">🗑 R</button>
+    </div>
+    <div class="disp-box">
+      <div style="color:#fff;font-size:24px">CV</div>
+      <div class="disp-val" id="cvVal">0</div>
+    </div>
+    <div class="q-box" id="quBox">QU = false</div>
+  </div>
+</div>
+
+<script>
+// 元素
+const blockSel = document.getElementById('blockSel');
+const areaTONTOF = document.getElementById('areaTONTOF');
+const areaCTU = document.getElementById('areaCTU');
+const inToggle = document.getElementById('inToggle');
+const ptInput = document.getElementById('ptInput');
+const etVal = document.getElementById('etVal');
+const qBox = document.getElementById('qBox');
+const pvInput = document.getElementById('pvInput');
+const cuBtn = document.getElementById('cuBtn');
+const rBtn = document.getElementById('rBtn');
+const cvVal = document.getElementById('cvVal');
+const quBox = document.getElementById('quBox');
+
+// 状态
+let mode = "TON";
+let IN = false;
+let PT = 5.0;
+let ET = 0.0;
+let Q = false;
+let PV = 5;
+let CV = 0;
+let QU = false;
+let timerId = null;
+let lastIn = false;
+
+// 切换块 TON/TOF/CTU
+blockSel.onchange = ()=>{
+  mode = blockSel.value;
+  resetAll();
+  if(mode === 'CTU'){
+    areaTONTOF.style.display = 'none';
+    areaCTU.style.display = 'block';
+  }else{
+    areaTONTOF.style.display = 'block';
+    areaCTU.style.display = 'none';
+  }
+}
+
+// 复位全部
+function resetAll(){
+  stopTimer();
+  IN = false;
+  ET = 0.0;
+  Q = false;
+  CV = 0;
+  QU = false;
+  render();
+}
+
+// 渲染界面
+function render(){
+  inToggle.classList.toggle('on', IN);
+  etVal.textContent = ET.toFixed(1);
+  qBox.textContent = `Q = ${Q}`;
+  cvVal.textContent = CV;
+  quBox.textContent = `QU = ${QU}`;
+}
+
+// 定时器循环 100ms扫描
+function startTimer(){
+  stopTimer();
+  timerId = setInterval(scan,100);
+}
+function stopTimer(){
+  clearInterval(timerId);
+}
+
+function scan(){
+  PT = Number(ptInput.value)||0.1;
+  if(mode === 'TON'){
+    if(IN){
+      ET += 0.1;
+      if(ET >= PT) Q = true;
+      else Q = false;
+    }else{
+      ET = 0; Q = false;
+    }
+  }else if(mode === 'TOF'){
+    if(IN){
+      Q = true; ET = 0;
+    }else{
+      ET +=0.1;
+      if(ET >= PT) Q = false;
+    }
+  }
+  render();
+}
+
+// IN开关
+inToggle.onclick = ()=>{
+  IN = !IN;
+  render();
+  if(mode === 'TON' || mode === 'TOF') startTimer();
+}
+
+// CTU CU上升沿
+cuBtn.onclick = ()=>{
+  PV = Number(pvInput.value)||1;
+  CV +=1;
+  if(CV >= PV) QU = true;
+  render();
+}
+rBtn.onclick = ()=>{
+  CV = 0; QU = false;
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
